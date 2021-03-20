@@ -24,23 +24,25 @@
 
 (defn annotate [board]
   (assert (vector? board))
-  (println board)
   (letfn [(vec-of [f] (vec (for [row (range 9)] (set (keep board (f row))))))]
     {:board       board
+     ;; heuristic: try substituting most used numbers first
+     :numbers     (vec (sort-by (some-fn (frequencies board) (constantly 0)) > range-9))
      :row-elems   (vec-of row-indices)
      :col-elems   (vec-of col-indices)
      :block-elems (vec-of block-indices)}))
 
-(defn candidates [{:keys [row-elems col-elems block-elems board]} index]
+(defn candidates [{:keys [row-elems col-elems block-elems board numbers]} index]
   (assert (nil? (board index)))
-  (->> range-9
+  (->> numbers
        (remove (row-elems (index->row index)))
        (remove (col-elems (index->col index)))
        (remove (block-elems (index->block index)))))
 
 (defn substitute [annotated index value]
   (assert (number? value))
-  {:board       (assoc  (:board annotated) index value)
+  {:numbers     (:numbers annotated)
+   :board       (assoc  (:board annotated) index value)
    :row-elems   (update (:row-elems annotated) (index->row index) conj value)
    :col-elems   (update (:col-elems annotated) (index->col index) conj value)
    :block-elems (update (:block-elems annotated) (index->block index) conj value)})
